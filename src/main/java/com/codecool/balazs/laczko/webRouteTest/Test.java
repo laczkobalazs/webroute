@@ -6,6 +6,8 @@ import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 
 public class Test {
@@ -21,6 +23,19 @@ public class Test {
         @Override
         public void handle(HttpExchange t) throws IOException {
             String response = "This is the response";
+            for (Method m: Routes.class.getMethods()) {
+                if (m.isAnnotationPresent(WebRoute.class)) {
+                    if (m.getAnnotation(WebRoute.class).value().equals(t.getRequestURI().getPath())) {
+                        try {
+                            response = (String) m.invoke(new Routes());
+                        } catch (IllegalAccessException e) {
+                            e.printStackTrace();
+                        } catch (InvocationTargetException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
             t.sendResponseHeaders(200, response.length());
             OutputStream os = t.getResponseBody();
             os.write(response.getBytes());
